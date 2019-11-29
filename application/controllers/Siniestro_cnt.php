@@ -192,6 +192,7 @@ class Siniestro_cnt extends CI_Controller {
 		//Datos del certificado y asegurado
 		$getCertificadoAsegurado = $this->siniestro_mdl->getCertificadoAsegurado2($certase_id);
 		$data['cert_id'] = $getCertificadoAsegurado['cert_id'];
+		$cert_id = $getCertificadoAsegurado['cert_id'];
 		$data['aseg_id'] = $getCertificadoAsegurado['aseg_id'];
 		$data['aseg_telf'] = $getCertificadoAsegurado['aseg_telf'];
 		$cert_iniVigc = $getCertificadoAsegurado['cert_iniVig'];
@@ -220,6 +221,11 @@ class Siniestro_cnt extends CI_Controller {
 		$nombre_comercial_pr2 = $siniestro['nombre_comercial_pr'];
 		$estado_atencion = $siniestro['estado_atencion'];
 		$data['idespecialidad'] = $siniestro['idespecialidad'];
+		$idespecialidad = $siniestro['idespecialidad'];
+
+		$getIdPlanDetalle = $this->siniestro_mdl->getIdPlanDetalle($cert_id,$idespecialidad);
+		$idplandetalle2 = $getIdPlanDetalle['idplandetalle'];
+		$nombre_esp = $getIdPlanDetalle['nombre_esp'];
 
 		//validar tipo variable
 		$variable = $this->siniestro_mdl->getVariable($idvariableplan);
@@ -259,6 +265,7 @@ class Siniestro_cnt extends CI_Controller {
 			case 1:
 				$idsiniestro=0;
 				$e2 = 1;
+				
 				if($tipo_var==1 && $idvariableplan==1){
 					$per_evento = $this->siniestro_mdl->getPeriodoEvento($data);
 					if(empty($per_evento)){
@@ -273,17 +280,16 @@ class Siniestro_cnt extends CI_Controller {
 								$estado2 = "El certificado tiene ".$per_evento['vez_actual'].' de '.$per_evento['total_vez'].' eventos consumidos' ;
 							}
 						}else{
-							$e2=1;							
+							$e2=1;												
 						}
 					}
 				}elseif($tipo_var==1 && $idvariableplan!=1){
+					$e2=1;
 					$per_evento = $this->siniestro_mdl->getPeriodoEvento($data);
 					if(empty($per_evento)){
 						$e2=1;
 					}else{
-						if($per_evento['total_vez']<$per_evento['vez_actual']){
-							$e2=1;
-						}else{
+						if($per_evento['total_vez']==$per_evento['vez_actual']){
 							$e=6;
 							$e2=2;
 							if($per_evento['tipo_evento']==1){
@@ -291,6 +297,8 @@ class Siniestro_cnt extends CI_Controller {
 							}else{													
 								$estado2 = "El certificado tiene ".$per_evento['vez_actual'].' de '.$per_evento['total_vez'].' eventos consumidos' ;
 							}
+						}else{
+							$e2=1;
 						}
 					}
 
@@ -303,100 +311,129 @@ class Siniestro_cnt extends CI_Controller {
 				// Verificar si el asegurado tiene una reserva
 				// $e (6=cita reservada con otro proveedor, 7 = primero debe generar OA)
 				// $e2 (1 = generar, 2 = reimprimir)
-				$siniestro = $this->siniestro_mdl->getSiniestro($data);
-				if(!empty($siniestro)){
-					foreach ($siniestro as $s) {
-						$idsiniestro = $s->idsiniestro;
-						$idproveedor2 = $s->idproveedor;
-						$nombre_comercial_pr2 = $s->nombre_comercial_pr;
-						$estado_atencion = $s->estado_atencion;
-						$var = $s->idvariableplan;
-						$data['idespecialidad'] = $s->idespecialidad;
-					}
-
-					if($estado_atencion=='P'){
-						if($idproveedor == $idproveedor2){						
-							if($tipo_var==1){
-								$e=1;
-								$e2=1;
-							}else{
-								$e2=1;
-								$e=7;
-								$estado2 = "Debe generar una orden de atención para validar ésta cobertura";
+				if($tipo_var==1 && $idvariableplan!=1){
+					$e=1;
+					$e2=1;
+					$per_evento = $this->siniestro_mdl->getPeriodoEvento($data);
+					if(empty($per_evento)){
+						$e2=1;
+					}else{
+						if($per_evento['total_vez']==$per_evento['vez_actual']){
+							$e=6;
+							$e2=2;
+							if($per_evento['tipo_evento']==1){
+								$estado2 = "El afiliado tiene ".$per_evento['vez_actual'].' de '.$per_evento['total_vez'].' eventos consumidos' ;
+							}else{													
+								$estado2 = "El certificado tiene ".$per_evento['vez_actual'].' de '.$per_evento['total_vez'].' eventos consumidos' ;
 							}
 						}else{
+							$e2=1;
+						}
+					}
 
-							if($tipo_var==1 && $idvariableplan!=1){	
-								$idsiniestro=0;
-								$e2 = 1;
-								$e=1;
-								$e2=1;
-							}else{
-								$e=6;
-								$e2=1;
-								$estado2 = "El afiliado cuenta con una cita reservada en ".$nombre_comercial_pr2;
-							}
-							
-						}						
-					}else{
-						if($idproveedor == $idproveedor2){						
-							/*if($tipo_var==1){
-								if($var == $idvariableplan){									
+				}else{
+					$siniestro = $this->siniestro_mdl->getSiniestro($data);
+					if(!empty($siniestro)){
+						foreach ($siniestro as $s) {
+							$idsiniestro = $s->idsiniestro;
+							$idproveedor2 = $s->idproveedor;
+							$nombre_comercial_pr2 = $s->nombre_comercial_pr;
+							$estado_atencion = $s->estado_atencion;
+							$var = $s->idvariableplan;
+							$data['idespecialidad'] = $s->idespecialidad;
+						}
+
+						if($estado_atencion=='P'){
+							if($idproveedor == $idproveedor2){						
+								if($tipo_var==1){
 									$e=1;
-									$e2 =2;
-								}else{
-									$e=1;
-									$e2 =1;
-								}
-							}else{*/
-								$data['idsiniestro']=$idsiniestro;
-								$getSinDetalle = $this->siniestro_mdl->getSiniestroDetalle($data);
-								$e=1;
-								if(empty($getSinDetalle)){	
-									$plan_detalle = $this->siniestro_mdl->getTiempo($idplandetalle);
-									if($plan_detalle['tiempo']==0){																
-										$e2=1;
+									if($idplandetalle==$idplandetalle2){
+										$e2 =1;
 									}else{
-										$per_evento = $this->siniestro_mdl->getPeriodoEvento($data);
-										if(empty($per_evento)){
+										$e=7;
+										$e2=2;
+										$estado2 = "La consulta fue reservada para la especialidad de ".$nombre_esp;
+									}
+								}else{
+									$e2=1;
+									$e=7;
+									$estado2 = "Debe generar una orden de atención para validar ésta cobertura";
+								}
+							}else{
+
+								if($tipo_var==1 && $idvariableplan!=1){	
+									$idsiniestro=0;
+									$e2 = 1;
+									$e=1;
+									$e2=1;
+								}else{
+									$e=6;
+									$e2=1;
+									$estado2 = "El afiliado cuenta con una cita reservada en ".$nombre_comercial_pr2;
+								}
+								
+							}						
+						}else{
+							if($idproveedor == $idproveedor2){						
+								/*if($tipo_var==1){
+									if($var == $idvariableplan){									
+										$e=1;
+										$e2 =2;
+									}else{
+										$e=1;
+										$e2 =1;
+									}
+								}else{*/
+									$data['idsiniestro']=$idsiniestro;
+									$getSinDetalle = $this->siniestro_mdl->getSiniestroDetalle($data);
+									$e=1;
+									if(empty($getSinDetalle)){	
+										$plan_detalle = $this->siniestro_mdl->getTiempo($idplandetalle);
+										if($plan_detalle['tiempo']==0){																
 											$e2=1;
 										}else{
-											if($per_evento['total_vez']<$per_evento['vez_actual']){
+											$per_evento = $this->siniestro_mdl->getPeriodoEvento($data);
+											if(empty($per_evento)){
 												$e2=1;
 											}else{
-												$e=6;
-												$e2=2;
-												if($per_evento['tipo_evento']==1){
-													$estado2 = "El afiliado tiene ".$per_evento['vez_actual'].' de '.$per_evento['total_vez'].' eventos consumidos';
-												}else{													
-													$estado2 = "El certificado tiene ".$per_evento['vez_actual'].' de '.$per_evento['total_vez'].' eventos consumidos';
+												if($per_evento['total_vez']<$per_evento['vez_actual']){
+													$e2=1;
+												}else{
+													$e=6;
+													$e2=2;
+													if($per_evento['tipo_evento']==1){
+														$estado2 = "El afiliado tiene ".$per_evento['vez_actual'].' de '.$per_evento['total_vez'].' eventos consumidos';
+													}else{													
+														$estado2 = "El certificado tiene ".$per_evento['vez_actual'].' de '.$per_evento['total_vez'].' eventos consumidos';
+													}
 												}
 											}
 										}
+									}else{
+										$e2=2;
 									}
-								}else{
-									$e2=2;
-								}
-							//}
-						}else{
-							if($tipo_var==1 && $idvariableplan!=1){	
-								$idsiniestro=0;
-								$e2 = 1;
-								$e=1;
-								$e2=1;
+								//}
 							}else{
-								$e=6;
-								$e2=1;
-								$estado2 = "El afiliado está siendo atendido en ".$nombre_comercial_pr2;
+								if($tipo_var==1 && $idvariableplan!=1){	
+									$idsiniestro=0;
+									$e2 = 1;
+									$e=1;
+									$e2=1;
+								}else{
+									$e=6;
+									$e2=1;
+									$estado2 = "El afiliado está siendo atendido en ".$nombre_comercial_pr2;
+								}
+								
 							}
-							
-						}
-					}	
-				}else{
-					$idsiniestro = 0;
-					$e=6;
-					$e2=1;
+						}	
+					}else{
+						$idsiniestro = 0;
+						$e=6;
+						$e2=1;
+					}
 				}
+				
 			break;
 
 
@@ -552,8 +589,16 @@ class Siniestro_cnt extends CI_Controller {
 			$idvariableplan = $_POST['idvariableplan'];
 			$nombre_var2="";
 
+			$med = $this->siniestro_mdl->getMedicamentosBloqueados($data);
+			if(!empty($med)){
+				$comentario = "No cubierto para la especialidad seleccionada";
+			}else{
+				$comentario = "El plan sólo cubre medicamentos en su presentación genérica";
+			}
+
 			//validar tipo variable
 			$variable = $this->siniestro_mdl->getVariable($idvariableplan);
+			$nombre = $variable['nombre_var'];
 			$tipo_var = $variable['tipo_var'];
 			$data['tipo_var'] = $tipo_var;
 
@@ -639,7 +684,7 @@ class Siniestro_cnt extends CI_Controller {
 							$fin = strtotime($pe->finVig);
 					        $fin = date("Y-m-d", $fin);
 					        $hoy = time();
-							if($estado==1){
+							if($estado==0){
 								while(strtotime($fin)<$hoy){
 									$ini = strtotime($fin."+ 1 day");
 									$ini = date("Y-m-d", $ini);
@@ -712,6 +757,7 @@ class Siniestro_cnt extends CI_Controller {
 			}
 			$OrdenAtencion = $this->siniestro_mdl->OrdenAtencion($data);
 			foreach ($OrdenAtencion as $oa){
+				$idproducto = $oa->idproducto;
 				$num = $oa->num_orden_atencion;
 				$plan = $oa->nombre_plan;
 				$fecha_atencion = $oa->fecha_atencion;
@@ -733,17 +779,13 @@ class Siniestro_cnt extends CI_Controller {
 			    $this->pdf->Ln();  
 	          	$this->pdf->SetFont('Arial','B',10); 
 
-	          	
-	          	$this->pdf->MultiCell(0,6,utf8_decode($nombre_comercial_pr),0,'R',false);
+
+			if($cobertura==1){
+			    $this->pdf->MultiCell(0,6,utf8_decode($nombre_comercial_pr),0,'R',false);
 	          	$this->pdf->Ln(-2);
 	          	$this->pdf->SetFont('Arial','',10); 
 	          	$this->pdf->MultiCell(0,6,utf8_decode("FORMULARIO DE ORDEN DE ATENCIÓN"),0,'R',false);
 	          	$this->pdf->Ln(10);	 
-
-	          	$this->pdf->Cell(47,7,utf8_decode("tipo: ".$test),1,0,'L',false); 
-	          	$this->pdf->Ln(10);	    
-
-
 			    $this->pdf->SetFont('Arial','B',10);
 			    $this->pdf->SetFillColor(0,0,0);
 			    $this->pdf->SetTextColor(255,255,255); 
@@ -815,7 +857,7 @@ class Siniestro_cnt extends CI_Controller {
 	            $this->pdf->Ln();
 	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
 	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode("Tratamiento (Según el primer diagnóstico, cubiertos sólo en presentación genérica)"),0,0,'L',false);	            
+	            $this->pdf->Cell(190,7,utf8_decode("Tratamiento (".$comentario.")"),0,0,'L',false);	            
 	            $this->pdf->SetFont('Arial','',9);
 	            $this->pdf->Ln();
 	            $this->pdf->Cell(64,7,utf8_decode("Medicamento"),1,0,'C',false);
@@ -843,8 +885,9 @@ class Siniestro_cnt extends CI_Controller {
 	            $this->pdf->SetFont('Arial','I',8);
 	            $this->pdf->Cell(190,7,utf8_decode("* Mediante el presente autorizo a Red Salud se le proporcione toda información médica que requiera para la evaluación de expediente médico."),0,0,'L',false);
 			    $this->pdf->SetFillColor(200,200,200);
-			    if($cobertura==1){
-			    $this->pdf->AddPage();				    
+
+			    if(empty($med)){
+			     $this->pdf->AddPage();				    
 			    $this->pdf->AliasNbPages();	
 			    $this->pdf->Ln(-2);  
 	          	$this->pdf->SetFont('Arial','B',10); 
@@ -951,79 +994,123 @@ class Siniestro_cnt extends CI_Controller {
 	            $this->pdf->MultiCell(190,6,utf8_decode("Si tuviera algun problema o consulta, puede comunicarse con Red-Salud."),0,'J');
 	            $this->pdf->MultiCell(190,6,utf8_decode("Central Telefónica: (01) 445-3019. RPM: #999908022. Email: contacto@red-salud.com"),0,'J');
 	            $this->pdf->SetTextColor(0,0,0);
-	        	}else{
-	        	$this->pdf->AddPage();				    
-			    $this->pdf->AliasNbPages();	
-			    $this->pdf->Ln(-2);  
-	          	$this->pdf->SetFont('Arial','B',10); 
-	          	$this->pdf->MultiCell(0,6,utf8_decode($nombre_comercial_pr),0,'R',false);
+			    }
+			}else{
+				$idespecialidad=0;
+				$this->pdf->MultiCell(0,6,utf8_decode($nombre_comercial_pr),0,'R',false);
+	          	$this->pdf->Ln(-2);
 	          	$this->pdf->SetFont('Arial','',10); 
 	          	$this->pdf->MultiCell(0,6,utf8_decode("FORMULARIO DE ORDEN DE ATENCIÓN"),0,'R',false);
-	          	$this->pdf->Ln(10);	    	          	
+	          	$this->pdf->Ln(10);	 
+			    $this->pdf->SetFont('Arial','B',10);
 			    $this->pdf->SetFillColor(0,0,0);
 			    $this->pdf->SetTextColor(255,255,255); 
-	          	$this->pdf->SetFont('Arial','B',10);
-	          	$this->pdf->MultiCell(190,6,utf8_decode("EMERGENCIAS / URGENCIAS"),0,'R',true);
-	          	$this->pdf->Ln();	          	
-			    $this->pdf->SetFont('Arial','',10);
-			    $this->pdf->SetTextColor(0,0,0); 
-	          	$this->pdf->Cell(100,7,"Paciente: ".utf8_decode($data['afiliado']),0,0,'L',false);
-	          	$this->pdf->Cell(50,7,utf8_decode("Orden Atención N°: "),0,0,'R',false);  
-	          	$this->pdf->SetFillColor(0,0,0);
+			    $this->pdf->Cell(190,7,utf8_decode("ORDEN DE ATENCIÓN N°".$num),1,0,'L',true);
+			    $this->pdf->Ln();
+			    $this->pdf->SetFont('Arial','',9);
+	    		$this->pdf->SetTextColor(0,0,0); 	    		
+			    $this->pdf->Cell(47,7,"DNI: ".$data['dni'],1,0,'L',false);
+			    $this->pdf->Cell(104,7,"Paciente: ".utf8_decode($data['afiliado']),1,0,'L',false);
+			    $this->pdf->Cell(39,7,"Fech. Nac: ".$fech_nac,1,0,'L',false);
+			    $this->pdf->Ln();
+			    $this->pdf->Cell(47,7,utf8_decode("Fecha de Atención: ".$fecha_atencion),1,0,'L',false);
+			    $this->pdf->Cell(143,7,utf8_decode("Lugar de Atención: ".$nombre_comercial_pr),1,0,'L',false);
+			    $this->pdf->Ln();
+			    $this->pdf->Cell(190,7,utf8_decode("Servicio: ".$nombre),1,0,'L',false);
+			    $this->pdf->SetFont('Arial','B',10);
+			    $this->pdf->Ln(); 
+			    $this->pdf->SetFillColor(0,0,0);
 			    $this->pdf->SetTextColor(255,255,255); 
-			    $this->pdf->Cell(40,7,utf8_decode($num),1,0,'L',true);    	
-			    $this->pdf->SetTextColor(0,0,0); 
+			    $this->pdf->Cell(190,7,utf8_decode("CONDICIONES DEL PLAN: ".$plan),1,0,'L',true);
 			    $this->pdf->Ln();
-			    $this->pdf->Cell(190,7,"DNI: ".utf8_decode($data['dni']),0,0,'L',false);
-			    $this->pdf->Ln();
-			    $this->pdf->Cell(190,7,utf8_decode("Fecha Atención: ".$fecha_atencion),0,0,'L',false);
-			    $this->pdf->Ln();
-			    $this->pdf->Cell(190,7,utf8_decode("Lugar Atención: ".$nombre_comercial_pr),0,0,'L',false);
-			    $this->pdf->Ln();
-			    $this->pdf->SetTextColor(255,255,255); 
-	          	$this->pdf->SetFont('Arial','B',10); 
-	          	$this->pdf->MultiCell(190,6,utf8_decode("CONDICIONES DEL PLAN: ".$plan),0,'L',true);
-			    $this->pdf->SetFont('Arial','',10);
-			    $this->pdf->SetTextColor(0,0,0); 
-			    $this->pdf->MultiCell(190,6,utf8_decode($nombre_var2.': '.$texto_web2),1,'J');
-			    $this->pdf->SetFont('Arial','B',10); 
-			    $this->pdf->Cell(190,7,utf8_decode("Laboratorios: "),0,0,'L',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode("Imageneología: "),0,0,'L',false);
-			    $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode("Otros: "),0,0,'L',false);
-			    $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Ln(35);
-	            $this->pdf->Cell(95,7,utf8_decode("________________________"),0,0,'C',false);
-	            $this->pdf->Cell(95,7,utf8_decode("________________________"),0,0,'C',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Cell(95,7,utf8_decode("Médico Tratante"),0,0,'C',false);
-	            $this->pdf->Cell(95,7,utf8_decode("Titular y/o Paciente"),0,0,'C',false);
-	            $this->pdf->Ln(10);	            
-	            $this->pdf->SetTextColor(243,45,45); 
+			    $this->pdf->SetFillColor(213,210,210);
+			    $this->pdf->SetTextColor(0,0,0);
+			    $this->pdf->SetFont('Arial','',8);
+			    $coberturas = $this->siniestro_mdl->coberturas($data);
+			    foreach ($coberturas as $c) {
+			    	if($idvariableplan==$c->idvariableplan){
+			    		$nombre_variable = $c->nombre_var;
+			    		$texto_web2 = $c->texto_web;
+			    	}    	
+			    }
+			   	$this->pdf->MultiCell(190,6,utf8_decode($nombre_variable.': '.$texto_web2),1,'J');
 	            $this->pdf->SetFont('Arial','B',9);
-	            $this->pdf->MultiCell(190,6,utf8_decode("Si tuviera algun problema o consulta, puede comunicarse con Red-Salud."),0,'J');
-	            $this->pdf->MultiCell(190,6,utf8_decode("Central Telefónica: (01) 445-3019. RPM: #999908022. Email: contacto@red-salud.com"),0,'J');
-	            $this->pdf->SetTextColor(0,0,0);
-	        	}
+	           	$this->pdf->Cell(190,7,utf8_decode("Motivo de atención"),0,0,'L',false);	           	
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);	
+	            $this->pdf->Ln();
+	           
+	            $this->pdf->Cell(190,7,utf8_decode("Tratamiento (".$comentario.")"),0,0,'L',false);	            
+	            $this->pdf->SetFont('Arial','',9);
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(80,7,utf8_decode("Servicio (Ejem: Laboratorio, Imágenes, etc)"),1,0,'C',false);
+	            $this->pdf->Cell(110,7,utf8_decode("Descripción (Ejem: Hemograma Completo, Urocultivo, etc)"),1,0,'C',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Ln(15);
+	            $this->pdf->Cell(95,7,utf8_decode("________________________"),0,0,'C',false);
+	            $this->pdf->Cell(95,7,utf8_decode("________________________"),0,0,'C',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(95,7,utf8_decode("Proveedor del Servicio"),0,0,'C',false);
+	            $this->pdf->Cell(95,7,utf8_decode("Titular y/o Paciente"),0,0,'C',false);
+	            $this->pdf->Ln(10);
+	            $this->pdf->SetFont('Arial','I',8);
+	            $this->pdf->Cell(190,7,utf8_decode("* Mediante el presente autorizo a Red Salud se le proporcione toda información que requiera para la evaluación de la atención."),0,0,'L',false);
+			    $this->pdf->SetFillColor(200,200,200);
+			}
 
 			$this->pdf->Output("uploads/".$data['idsiniestro'].".pdf", 'F');
 			//email para post venta
@@ -1412,7 +1499,7 @@ class Siniestro_cnt extends CI_Controller {
 				$this->load->view('templates/detalle_pdf',$data);
 	}
 
-	function reimprimir_pdf($idsiniestro,$idvariableplan){
+	function reimprimir_pdf($idsiniestro,$idvariableplan,$idplandetalle){
 		//load session library
 		$this->load->library('session');
 
@@ -1434,12 +1521,20 @@ class Siniestro_cnt extends CI_Controller {
 			$nombre_var = "MEDICAMENTOS GENÉRICOS";
 			$texto_web = "";
 
+			$data['idplandetalle'] = $idplandetalle;
+			$variable = $this->siniestro_mdl->getVariable($idvariableplan);
+			$nombre = $variable['nombre_var'];
+			$tipo_var = $variable['tipo_var'];
+			$data['tipo_var'] = $tipo_var;
+
+			$med2 = $this->siniestro_mdl->getMedicamentosBloqueados($data);
+			if(!empty($med2)){
+				$comentario = "No cubierto para la especialidad seleccionada";
+			}else{
+				$comentario = "El plan sólo cubre medicamentos en su presentación genérica";
+			}
+
 			$med = $this->siniestro_mdl->getDiagnostico($idsiniestro);
-			if(!empty($med)){
-					$diagnostico = $med['dianostico_temp'];
-	       		}else{
-	       			$diagnostico = "";
-	       		}
        		 
 
 			// //Crear formato de liquidación
@@ -1450,12 +1545,15 @@ class Siniestro_cnt extends CI_Controller {
 			    $this->pdf->AliasNbPages();
 			    $this->pdf->Ln();  
 	          	$this->pdf->SetFont('Arial','B',10); 
-	          	$this->pdf->MultiCell(0,6,utf8_decode($nombre_comercial_pr),0,'R',false);
+
+
+			if($idvariableplan==1){
+			    $this->pdf->MultiCell(0,6,utf8_decode($nombre_comercial_pr),0,'R',false);
 	          	$this->pdf->Ln(-2);
 	          	$this->pdf->SetFont('Arial','',10); 
-	          	$this->pdf->MultiCell(0,6,utf8_decode("FORMULARIO DE ORDEN DE ATENCIÓN"),0,'R',false);
-	          	$this->pdf->Ln(10);	    
-	          	$this->pdf->Image(base_url().'assets/images/copia.jpg',0,40,190);	      	
+	          	$this->pdf->MultiCell(0,6,utf8_decode("FORMULARIO DE ORDEN DE ATENCIÓN"),0,'R',false);   
+	          	$this->pdf->Image(base_url().'assets/images/copia.jpg',0,40,190);	
+	          	$this->pdf->Ln(10);	 
 			    $this->pdf->SetFont('Arial','B',10);
 			    $this->pdf->SetFillColor(0,0,0);
 			    $this->pdf->SetTextColor(255,255,255); 
@@ -1472,7 +1570,7 @@ class Siniestro_cnt extends CI_Controller {
 			    $this->pdf->Ln();
 			    $this->pdf->Cell(190,7,utf8_decode("Especialidad: ".$especialidad),1,0,'L',false);
 			    $this->pdf->SetFont('Arial','B',10);
-			    $this->pdf->Ln();
+			    $this->pdf->Ln(); 
 			    $this->pdf->SetFillColor(0,0,0);
 			    $this->pdf->SetTextColor(255,255,255); 
 			    $this->pdf->Cell(190,7,utf8_decode("CONDICIONES DEL PLAN: ".$plan),1,0,'L',true);
@@ -1496,7 +1594,7 @@ class Siniestro_cnt extends CI_Controller {
 			   		}
 			   	}else{
 			   		$this->pdf->MultiCell(190,6,utf8_decode($nombre_var2.': '.$texto_web2),1,'J');
-			   	}	          	        	
+			   	}	          	
 	            $this->pdf->SetFont('Arial','B',9);
 	           	$this->pdf->Cell(190,7,utf8_decode("Motivo de consulta"),0,0,'L',false);	           	
 	            $this->pdf->Ln();
@@ -1525,11 +1623,9 @@ class Siniestro_cnt extends CI_Controller {
 	            $this->pdf->SetFont('Arial','B',9);
 	            $this->pdf->Cell(190,7,utf8_decode("Diagnóstico"),0,0,'L',false);
 	            $this->pdf->Ln();
-	            $this->pdf->SetFont('Arial','',9);
-	            $this->pdf->Cell(190,7,utf8_decode($diagnostico),1,0,'L',false);
+	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
 	            $this->pdf->Ln();
-	            $this->pdf->SetFont('Arial','B',9);
-	            $this->pdf->Cell(190,7,utf8_decode("Tratamiento (Según el primer diagnóstico, cubiertos sólo en presentación genérica)"),0,0,'L',false);	            
+	            $this->pdf->Cell(190,7,utf8_decode("Tratamiento (".$comentario.")"),0,0,'L',false);	            
 	            $this->pdf->SetFont('Arial','',9);
 	            $this->pdf->Ln();
 	            $this->pdf->Cell(64,7,utf8_decode("Medicamento"),1,0,'C',false);
@@ -1557,7 +1653,8 @@ class Siniestro_cnt extends CI_Controller {
 	            $this->pdf->SetFont('Arial','I',8);
 	            $this->pdf->Cell(190,7,utf8_decode("* Mediante el presente autorizo a Red Salud se le proporcione toda información médica que requiera para la evaluación de expediente médico."),0,0,'L',false);
 			    $this->pdf->SetFillColor(200,200,200);
-			    if($idvariableplan==1){
+
+			    if(empty($med2)){
 			    $this->pdf->AddPage();				    
 			    $this->pdf->AliasNbPages();	
 			    $this->pdf->Ln(-2);  
@@ -1565,9 +1662,8 @@ class Siniestro_cnt extends CI_Controller {
 	          	$this->pdf->MultiCell(0,6,utf8_decode($nombre_comercial_pr),0,'R',false);
 	          	$this->pdf->Ln();
 	          	$this->pdf->SetFont('Arial','',10); 
-	          	$this->pdf->MultiCell(0,6,utf8_decode("FORMULARIO DE ORDEN DE MADICAMENTOS"),0,'R',false);
-	          	$this->pdf->Ln(10);	    	
-	          	$this->pdf->Image(base_url().'assets/images/copia.jpg',0,35,190);	          	
+	          	$this->pdf->MultiCell(0,6,utf8_decode("FORMULARIO DE ORDEN DE MEDICAMENTOS"),0,'R',false);
+	          	$this->pdf->Ln(10);	    	          	
 			    $this->pdf->SetFillColor(0,0,0);
 			    $this->pdf->SetTextColor(255,255,255); 
 	          	$this->pdf->SetFont('Arial','B',10);
@@ -1593,7 +1689,7 @@ class Siniestro_cnt extends CI_Controller {
 	          	$this->pdf->MultiCell(190,6,utf8_decode("CONDICIONES DEL PLAN: ".$plan),0,'L',true);
 			    $this->pdf->SetFont('Arial','',10);
 			    $this->pdf->SetTextColor(0,0,0); 
-			    $this->pdf->MultiCell(190,6,utf8_decode($nombre_var.': '.$texto_web),1,'J');
+			    $this->pdf->MultiCell(190,6,utf8_decode($nombre_var.': '.$texto_web),1,'J');			    
 	            $this->pdf->SetFont('Arial','B',9);
 	            $this->pdf->Cell(190,7,utf8_decode("Diagnóstico"),0,0,'L',false);
 	            $this->pdf->Ln();
@@ -1666,80 +1762,114 @@ class Siniestro_cnt extends CI_Controller {
 	            $this->pdf->MultiCell(190,6,utf8_decode("Si tuviera algun problema o consulta, puede comunicarse con Red-Salud."),0,'J');
 	            $this->pdf->MultiCell(190,6,utf8_decode("Central Telefónica: (01) 445-3019. RPM: #999908022. Email: contacto@red-salud.com"),0,'J');
 	            $this->pdf->SetTextColor(0,0,0);
-	        	}else{
-	        	$this->pdf->AddPage();				    
-			    $this->pdf->AliasNbPages();	
-			    $this->pdf->Ln(-2);  
-	          	$this->pdf->SetFont('Arial','B',10); 
-	          	$this->pdf->MultiCell(0,6,utf8_decode($nombre_comercial_pr),0,'R',false);
+			    }
+			}else{
+				$this->pdf->MultiCell(0,6,utf8_decode($nombre_comercial_pr),0,'R',false);
+	          	$this->pdf->Ln(-2);
 	          	$this->pdf->SetFont('Arial','',10); 
 	          	$this->pdf->MultiCell(0,6,utf8_decode("FORMULARIO DE ORDEN DE ATENCIÓN"),0,'R',false);
-	          	$this->pdf->Ln(10);	    	
-	          	$this->pdf->Image(base_url().'assets/images/copia.jpg',0,35,190);
+	          	$this->pdf->Ln(10);	 
+			    $this->pdf->SetFont('Arial','B',10);
 			    $this->pdf->SetFillColor(0,0,0);
 			    $this->pdf->SetTextColor(255,255,255); 
-	          	$this->pdf->SetFont('Arial','B',10);
-	          	$this->pdf->MultiCell(190,6,utf8_decode("EMERGENCIAS / URGENCIAS"),0,'R',true);
-	          	$this->pdf->Ln();	          	
-			    $this->pdf->SetFont('Arial','',10);
-			    $this->pdf->SetTextColor(0,0,0); 
-	          	$this->pdf->Cell(100,7,"Paciente: ".utf8_decode($afiliado),0,0,'L',false);
-	          	$this->pdf->Cell(50,7,utf8_decode("Orden Atención N°: "),0,0,'R',false);  
-	          	$this->pdf->SetFillColor(0,0,0);
+			    $this->pdf->Cell(190,7,utf8_decode("ORDEN DE ATENCIÓN N°".$num),1,0,'L',true);
+			    $this->pdf->Ln();
+			    $this->pdf->SetFont('Arial','',9);
+	    		$this->pdf->SetTextColor(0,0,0); 	    		
+			    $this->pdf->Cell(47,7,"DNI: ".$data['dni'],1,0,'L',false);
+			    $this->pdf->Cell(104,7,"Paciente: ".utf8_decode($data['afiliado']),1,0,'L',false);
+			    $this->pdf->Cell(39,7,"Fech. Nac: ".$fech_nac,1,0,'L',false);
+			    $this->pdf->Ln();
+			    $this->pdf->Cell(47,7,utf8_decode("Fecha de Atención: ".$fecha_atencion),1,0,'L',false);
+			    $this->pdf->Cell(143,7,utf8_decode("Lugar de Atención: ".$nombre_comercial_pr),1,0,'L',false);
+			    $this->pdf->Ln();
+			    $this->pdf->Cell(190,7,utf8_decode("Servicio: ".$nombre),1,0,'L',false);
+			    $this->pdf->SetFont('Arial','B',10);
+			    $this->pdf->Ln(); 
+			    $this->pdf->SetFillColor(0,0,0);
 			    $this->pdf->SetTextColor(255,255,255); 
-			    $this->pdf->Cell(40,7,utf8_decode($num),1,0,'L',true);    	
-			    $this->pdf->SetTextColor(0,0,0); 
+			    $this->pdf->Cell(190,7,utf8_decode("CONDICIONES DEL PLAN: ".$plan),1,0,'L',true);
 			    $this->pdf->Ln();
-			    $this->pdf->Cell(190,7,"DNI: ".utf8_decode($dni),0,0,'L',false);
-			    $this->pdf->Ln();
-			    $this->pdf->Cell(190,7,utf8_decode("Fecha Atención: ".$fecha_atencion),0,0,'L',false);
-			    $this->pdf->Ln();
-			    $this->pdf->Cell(190,7,utf8_decode("Lugar Atención: ".$nombre_comercial_pr),0,0,'L',false);
-			    $this->pdf->Ln();
-			    $this->pdf->SetTextColor(255,255,255); 
-	          	$this->pdf->SetFont('Arial','B',10); 
-	          	$this->pdf->MultiCell(190,6,utf8_decode("CONDICIONES DEL PLAN: ".$plan),0,'L',true);
-			    $this->pdf->SetFont('Arial','',10);
-			    $this->pdf->SetTextColor(0,0,0); 
-			    $this->pdf->MultiCell(190,6,utf8_decode($nombre_var2.': '.$texto_web2),1,'J');
-			    $this->pdf->SetFont('Arial','B',10); 
-			    $this->pdf->Cell(190,7,utf8_decode("Laboratorios: "),0,0,'L',false);
+			    $this->pdf->SetFillColor(213,210,210);
+			    $this->pdf->SetTextColor(0,0,0);
+			    $this->pdf->SetFont('Arial','',8);
+			    $coberturas = $this->siniestro_mdl->coberturas($data);
+			    foreach ($coberturas as $c) {
+			    	if($c->idvariableplan==2){
+			    		$nombre_var = $c->nombre_var;
+			    		$texto_web = $c->texto_web;
+			    	}elseif($c->idvariableplan==38){
+			    		$nombre_var2 = $c->nombre_var;
+			    		$texto_web2 = $c->texto_web;
+			    	}			    	
+			    }
+			    if($cobertura==1){
+			    	foreach ($coberturas as $c) {
+			   			$this->pdf->MultiCell(190,6,utf8_decode($c->nombre_var.': '.$c->texto_web),1,'J');
+			   		}
+			   	}else{
+			   		$this->pdf->MultiCell(190,6,utf8_decode($nombre_var2.': '.$texto_web2),1,'J');
+			   	}	          	
+	            $this->pdf->SetFont('Arial','B',9);
+	           	$this->pdf->Cell(190,7,utf8_decode("Motivo de consulta"),0,0,'L',false);	           	
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);	
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(190,7,utf8_decode("Exámen Físico / Historia Actual"),0,0,'L',false);	           	
+	            $this->pdf->Ln(); 
+	            $this->pdf->SetFont('Arial','',9);
+	            $this->pdf->Cell(38,7,utf8_decode("PA:"),1,0,'L',false);
+	            $this->pdf->Cell(38,7,utf8_decode("FC:"),1,0,'L',false);
+	            $this->pdf->Cell(38,7,utf8_decode("FR:"),1,0,'L',false);
+	            $this->pdf->Cell(38,7,utf8_decode("Peso(kg):"),1,0,'L',false);
+	            $this->pdf->Cell(38,7,utf8_decode("Talla(m):"),1,0,'L',false);	
+	            $this->pdf->Ln(); 
+	            $this->pdf->Cell(76,7,utf8_decode("Cabeza:"),1,0,'L',false);
+	            $this->pdf->Cell(114,7,utf8_decode("Piel y Faneras:"),1,0,'L',false);
+	            $this->pdf->Ln(); 
+	            $this->pdf->Cell(76,7,utf8_decode("CV:RC:"),1,0,'L',false);
+	            $this->pdf->Cell(114,7,utf8_decode("TP:MV:"),1,0,'L',false);
+	            $this->pdf->Ln(); 
+	            $this->pdf->Cell(114,7,utf8_decode("Abdomen:"),1,0,'L',false);
+	            $this->pdf->Cell(76,7,utf8_decode("RHA:"),1,0,'L',false);
+	            $this->pdf->Ln(); 
+	            $this->pdf->Cell(190,7,utf8_decode("Neuro:"),1,0,'L',false);
+	            $this->pdf->Ln();
+	            $this->pdf->SetFont('Arial','B',9);
+	            $this->pdf->Cell(190,7,utf8_decode("Diagnóstico"),0,0,'L',false);
 	            $this->pdf->Ln();
 	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
 	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(190,7,utf8_decode("Tratamiento (".$comentario.")"),0,0,'L',false);	            
+	            $this->pdf->SetFont('Arial','',9);
 	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(64,7,utf8_decode("Medicamento"),1,0,'C',false);
+	            $this->pdf->Cell(63,7,utf8_decode("Cantidad"),1,0,'C',false);
+	            $this->pdf->Cell(64,7,utf8_decode("Dosis"),1,0,'C',false);
 	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode("Imageneología: "),0,0,'L',false);
-			    $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(63,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
 	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(63,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
 	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode("Otros: "),0,0,'L',false);
-			    $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Ln(35);
+	            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(63,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Ln(15);
 	            $this->pdf->Cell(95,7,utf8_decode("________________________"),0,0,'C',false);
 	            $this->pdf->Cell(95,7,utf8_decode("________________________"),0,0,'C',false);
 	            $this->pdf->Ln();
 	            $this->pdf->Cell(95,7,utf8_decode("Médico Tratante"),0,0,'C',false);
 	            $this->pdf->Cell(95,7,utf8_decode("Titular y/o Paciente"),0,0,'C',false);
-	            $this->pdf->Ln(10);	            
-	            $this->pdf->SetTextColor(243,45,45); 
-	            $this->pdf->SetFont('Arial','B',9);
-	            $this->pdf->MultiCell(190,6,utf8_decode("Si tuviera algun problema o consulta, puede comunicarse con Red-Salud."),0,'J');
-	            $this->pdf->MultiCell(190,6,utf8_decode("Central Telefónica: (01) 445-3019. RPM: #999908022. Email: contacto@red-salud.com"),0,'J');
-	            $this->pdf->SetTextColor(0,0,0);	
-	        	}
+	            $this->pdf->Ln(10);
+	            $this->pdf->SetFont('Arial','I',8);
+	            $this->pdf->Cell(190,7,utf8_decode("* Mediante el presente autorizo a Red Salud se le proporcione toda información médica que requiera para la evaluación de expediente médico."),0,0,'L',false);
+			    $this->pdf->SetFillColor(200,200,200);
+			}
+			
 
 			$this->pdf->Output("uploads/".$data['idsiniestro'].".pdf", 'F');
 			$this->load->view('templates/detalle_pdf',$data);
