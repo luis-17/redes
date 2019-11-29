@@ -175,6 +175,16 @@ extract($user);
                     <tbody>
               <tr>
                 <td width="5%" style="vertical-align: middle; text-align: center;">
+                  <?php if($e2==2){
+                          if($c->idvariableplan!=1){                            
+                            if($c->tipo_var==1){
+                              $e2=1;
+                            }else{
+                              $e2=2;
+                            }
+                          }
+                        } 
+                  ?>
                   <a class="boton fancybox" title="<?=$titulo?>" href="<?= base_url()?>index.php/detalle_cobertura/<?=$c->idplandetalle?>/<?=$certase_id?>/<?=$c->idvariableplan?>/<?=$e2?>/<?=$estado2?>" data-fancybox-width="950" data-fancybox-height="690">
                     <input type="image" height="50%" src="<?=$img?>" <?=$estado_cobertura?>> 
                   </a>
