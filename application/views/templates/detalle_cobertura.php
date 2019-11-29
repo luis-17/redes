@@ -197,7 +197,7 @@ extract($user);
                           <input class="form-control" name="dianostico_temp" id="dianostico_temp"/>                          
                           <input type="hidden" name="idvariableplan" value="<?=$idvariableplan?>">
                           <input type="hidden" id="idsiniestro" name="idsiniestro" value="<?=$idsiniestro?>">
-                          <input type="hidden" id="idplandetalle" name="idplandetalle" value="<?=$idplandetalle?>">                          
+                          <input type="hidden" id="idplandetalle" name="idplandetalle" value="<?=$idplandetalle?>">
                           <input type="hidden" name="dianostico_temp" id="dianostico_temp" />  
                           <input type='hidden' name='tipo' id='tipo' value='1'>               
                         </form>
