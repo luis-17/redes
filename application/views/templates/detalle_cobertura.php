@@ -27,7 +27,6 @@ extract($user);
   <link rel="stylesheet" type="text/css" href="<?=base_url()?>assets/css/custom.8.css">
   <link rel="stylesheet" href="<?=base_url()?>assets/css/animate.min.css">
 
-
 <!-- Global site tag (gtag.js) - Google Analytics -->
 
 <script type="text/javascript" async="" src="https://www.google-analytics.com/analytics.js"></script><script async="" src="https://www.googletagmanager.com/gtag/js?id=UA-132525819-1"></script>
@@ -99,9 +98,11 @@ extract($user);
         </div>
       </div>      
       <hr>
-      <?php switch($idvariableplan){
-        case 1:
-            if($estado_impresion==1 || $estado_impresion==38){?>
+      <?php 
+
+      if($tipo_var==1){
+        if($idvariableplan==1){
+          if($estado_impresion==1 || $estado_impresion==38){?>
               <form method="post" action="<?=base_url()?>index.php/generar_orden">
                 <input type="hidden" name="idvariableplan" value="<?=$idvariableplan?>">
                 <input type="hidden" id="idplandetalle" name="idplandetalle" value="<?=$idplandetalle?>">
@@ -136,11 +137,53 @@ extract($user);
               </form>
             <?php }else{ ?>
               <div class="col-12 col-sm-12 col-md-12">
-                <a href="<?=base_url()?>index.php/reimprimir_pdf/<?=$idsiniestro?>/<?=$idvariableplan?>" class="btn btn-custom btn-celeste">Re-Imprimir Orden de Atención</a>     
+                <a href="<?=base_url()?>index.php/reimprimir_pdf/<?=$idsiniestro?>/<?=$idvariableplan?>/<?=$idplandetalle?>" class="btn btn-custom btn-celeste">Re-Imprimir Orden de Atención</a>     
               </div>
             <?php } ?>
           </div>
         <?php break;
+      }else{
+        if($estado_impresion==1 || $estado_impresion==38){?>
+              <form method="post" action="<?=base_url()?>index.php/generar_orden">
+                <input type="hidden" id="idplandetalle" name="idplandetalle" value="<?=$idplandetalle?>">  
+                <input type="hidden" name="idvariableplan" value="<?=$idvariableplan?>">
+                <input type="hidden" name="cert_id" value="<?=$cert_id?>">
+                <input type="hidden" name="aseg_id" value="<?=$aseg_id?>">
+                <input type="hidden" name="certase_id" value="<?=$certase_id?>">
+                <div class="row">
+                  <div class="col-12 col-sm-12 col-md-12">
+                    <table>
+                      <thead>
+                        <th colspan="2"><?=$descripcion?></th>
+                      </thead>
+                     <tbody>
+                        <?php 
+                        $cant = count($producto_detalle);
+                        foreach ($producto_detalle as $pd) {?>
+                          <tr>
+                            <td><input type="radio" name="especialidad" value="<?=$pd->idespecialidad?>" <?php if($idespecialidad==$pd->idespecialidad){ echo "checked";}elseif($cant==1){ echo "checked";}?> onclick="javascript:validar(this);"></td>
+                            <td><?=$pd->descripcion_prod?></td>                 
+                          </tr>
+                        <?php } ?>          
+                      </tbody>    
+                    </table>
+                  </div>        
+                </div>
+                <br>
+                <div><b>Teléfono de contacto:</b> <input type="text" class="form-control col-md-4" name="telf" required="true" value="<?=$aseg_telf?>"></div>
+                <hr>
+                <div class="col-12 col-sm-12 col-md-12">
+                   <input type="submit" id="generar" name="" value="Generar Orden de <?=$cobertura?>" class="btn btn-custom btn-celeste">      
+                </div>
+              </form>
+            <?php }else{ ?>
+              <div class="col-12 col-sm-12 col-md-12">
+                <a href="<?=base_url()?>index.php/reimprimir_pdf/<?=$idsiniestro?>/<?=$idvariableplan?>/<?=$idplandetalle?>" class="btn btn-custom btn-celeste">Re-Imprimir Orden de  <?=$cobertura?></a>     
+              </div>
+            <?php }
+      }
+    }else{
+        switch($idvariableplan){
         case 2:
             if($estado_impresion==1){
               if($diagnostico==''){?>              
@@ -234,7 +277,7 @@ extract($user);
                     <input type="hidden" id="idsiniestro" name="idsiniestro" value="<?=$idsiniestro?>">
                     <input type="hidden" id="idplandetalle" name="idplandetalle" value="<?=$idplandetalle?>">  
                     <input type='hidden' name='dianostico_temp' id='dianostico_temp' value=''>
-                           <input type='hidden' name='tipo' id='tipo' value='1'>
+                    <input type='hidden' name='tipo' id='tipo' value='1'>
                     <input type='hidden' name='tipo' id='tipo' value='2'> 
                     <br>
                     <table class='col-12 col-sm-12 col-md-12'>
@@ -327,43 +370,6 @@ extract($user);
               </div>
             </div>
         <?php break;
-        case 38:
-            if($estado_impresion==1 || $estado_impresion==38){?>
-              <form method="post" action="<?=base_url()?>index.php/generar_orden">
-                <input type="hidden" id="idplandetalle" name="idplandetalle" value="<?=$idplandetalle?>">  
-                <input type="hidden" name="idvariableplan" value="<?=$idvariableplan?>">
-                <input type="hidden" name="cert_id" value="<?=$cert_id?>">
-                <input type="hidden" name="aseg_id" value="<?=$aseg_id?>">
-                <input type="hidden" name="certase_id" value="<?=$certase_id?>">
-                <div class="row">
-                  <div class="col-12 col-sm-12 col-md-12">
-                    <table>
-                      <thead>
-                        <th colspan="2"><?=$descripcion?></th>
-                      </thead>
-                      <tbody>                       
-                          <tr>
-                            <td><input type="radio" name="especialidad" value="27" checked ></td>
-                            <td>Todos los servicios derivados de la emergencia.</td>                 
-                          </tr>
-                      </tbody>            
-                    </table>
-                  </div>        
-                </div>
-                <br>
-                <div><b>Teléfono de contacto:</b> <input type="text" class="form-control col-md-4" name="telf" required="true" value="<?=$aseg_telf?>"></div>
-                <hr>
-                <div class="col-12 col-sm-12 col-md-12">
-                   <input type="submit" id="generar" name="" value="Generar Orden de Emergencia/ Urgencia" class="btn btn-custom btn-celeste">      
-                </div>
-              </form>
-            <?php }else{ ?>
-              <div class="col-12 col-sm-12 col-md-12">
-                <a href="<?=base_url()?>index.php/reimprimir_pdf/<?=$idsiniestro?>/<?=$idvariableplan?>" class="btn btn-custom btn-celeste">Re-Imprimir Orden de Emergencias/Urgencias</a>     
-              </div>
-            <?php } ?>
-          </div>
-        <?php break;
         default:
             if($estado_impresion==1){?>
               <div class="row">
@@ -405,8 +411,11 @@ extract($user);
           <?php break;
       } ?>
   </div>      
-  <?php break;
-  default: ?>
+  <?php } 
+  break;
+      ?>
+  </div>      
+  <?php default: ?>
   <div class="container">
       <div class="row">
         <div class="col-12">
@@ -421,7 +430,9 @@ extract($user);
         </div>
       </div>
   </div>
-  <?php break; }?>
+  <?php break; 
+  }?>
+      
 </section>
 
 <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
@@ -481,7 +492,7 @@ extract($user);
       });
       }
     });
-  </script>
+  </script> 
 
   <script type="text/javascript">
 

@@ -103,7 +103,7 @@
 	}
 
 	function getCoberturas($id){
-		$this->db->select("dp.idplandetalle, dp.idplan, dp.idvariableplan, dp.valor_detalle, dp.simbolo_detalle, dp.texto_web, dp.visible, dp.estado_pd, dp.flg_liquidacion, dp.tiempo, dp.num_eventos, UPPER(vp.nombre_var) as nombre_var, coalesce(idperiodo,0) as idperiodo, coalesce(vez_actual,0) as vez_actual, coalesce(total_vez,0) as total_vez, cobertura, tiempo, num_eventos, dp.iniVig, dp.finVig,  coalesce(bloqueos,'-') as bloqueos");
+		$this->db->select("dp.idplandetalle, dp.idplan, dp.idvariableplan, dp.valor_detalle, dp.simbolo_detalle, dp.texto_web, dp.visible, dp.estado_pd, dp.flg_liquidacion, dp.tiempo, dp.num_eventos, UPPER(vp.nombre_var) as nombre_var, coalesce(idperiodo,0) as idperiodo, coalesce(vez_actual,0) as vez_actual, coalesce(total_vez,0) as total_vez, cobertura, tiempo, num_eventos, dp.iniVig, dp.finVig,  coalesce(bloqueos,'-') as bloqueos, vp.tipo_var");
 		$this->db->from("plan_detalle dp");
 		$this->db->join("variable_plan vp","dp.idvariableplan = vp.idvariableplan");
 		$this->db->join("(select GROUP_CONCAT(concat(' ',descripcion,' ',valor)) as cobertura, idplandetalle from plan_coaseguro pc inner join operador o on pc.idoperador=o.idoperador
@@ -307,7 +307,7 @@
 	}
 
 	function OrdenAtencion($data){
-		$this->db->select("num_orden_atencion, nombre_plan, fecha_atencion, descripcion_prod");
+		$this->db->select("num_orden_atencion, nombre_plan, fecha_atencion, descripcion_prod, s.idespecialidad, pr.idproducto");
 		$this->db->from("siniestro s");
 		$this->db->join("producto pr","s.idespecialidad=pr.idespecialidad");
 		$this->db->join("certificado c","c.cert_id=s.idcertificado");
@@ -325,8 +325,15 @@
 								left join (select GROUP_CONCAT(concat(' ',descripcion,' ',valor)) as cobertura, idplandetalle from plan_coaseguro pc inner join operador o on pc.idoperador=o.idoperador
  								where pc.estado=1 group by idplandetalle)a on a.idplandetalle=pd.idplandetalle
 								where cert_id=(select idcertificado from siniestro where idsiniestro=".$data['idsiniestro'].") and estado_pd=1 and visible=1
-								and pd.idplandetalle not in (select idplandetalle from plan_detalle where idvariableplan in (select idvariableplan from variable_plan where tipo_var=1) and  idplandetalle<>(select distinct sd.idplandetalle from siniestro_detalle sd inner join plan_detalle pd on sd.idplandetalle=pd.idplandetalle where pd.idvariableplan in(select idvariableplan from variable_plan where tipo_var=1) and idsiniestro=".$data['idsiniestro']."))
+								and pd.idplandetalle not in (select idplandetalle from plan_detalle where idvariableplan in (select idvariableplan from variable_plan where tipo_var=1) and  idplandetalle NOT IN(select distinct sd.idplandetalle from siniestro_detalle sd inner join plan_detalle pd on sd.idplandetalle=pd.idplandetalle where pd.idvariableplan in(select idvariableplan from variable_plan where tipo_var=1) and idsiniestro=".$data['idsiniestro']."))
 								and pd.idplandetalle not in (select idplandetalle_bloqueado from plan_detalle_bloqueo where idplandetalle_bloquea in (select sd.idplandetalle from siniestro_detalle sd inner join plan_detalle pd on sd.idplandetalle=pd.idplandetalle where pd.idvariableplan in (select idvariableplan from variable_plan where tipo_var=1) and idsiniestro=".$data['idsiniestro']."))");
+		return $query->result();
+	}
+
+	function getMedicamentosBloqueados($data){
+		$query = $this->db->query("select idvariableplan from plan_detalle_bloqueo b 
+									inner join plan_detalle pd on b.idplandetalle_bloqueado=pd.idplandetalle
+									where idplandetalle_bloquea=".$data['idplandetalle']." and idvariableplan=2");
 		return $query->result();
 	}
 
@@ -352,7 +359,7 @@
 	}
 
 	function getDetalleProductos($id){
-		$this->db->select("pr.idproducto, descripcion_prod");
+		$this->db->select("pr.idproducto, descripcion_prod, idespecialidad");
 		$this->db->from("producto pr");
 		$this->db->join("producto_detalle dp","pr.idproducto=dp.idproducto");
 		$this->db->join("plan_detalle p","p.idplandetalle=dp.idplandetalle");
@@ -480,7 +487,7 @@
 	}
 
 	function getCoberturas_Periodos($data){
-		$query = $this->db->query("select * from plan_detalle where idplan=(select plan_id from certificado where cert_id=".$data['cert_id'].")");
+		$query = $this->db->query("select * from plan_detalle pd inner join variable_plan vp on vp.idvariableplan=pd.idvariableplan where idplan=(select plan_id from certificado where cert_id=".$data['cert_id'].")");
 		return $query->result();
 	}
 
@@ -634,6 +641,11 @@
 
 	function getVariable($id){
 		$query = $this->db->query("select * from variable_plan where idvariableplan=$id");
+		return $query->row_array();
+	}
+
+	function getIdPlanDetalle($cert_id,$idespecialidad){
+		$query = $this->db->query("select idplandetalle, (select nombre_esp from especialidad where idespecialidad=21) as nombre_esp from plan_detalle where idplan in (select plan_id from certificado where cert_id=$cert_id) and idvariableplan=1 and idplandetalle in (select idplandetalle from producto_detalle where idproducto=(select idproducto from producto where idespecialidad=$idespecialidad))");
 		return $query->row_array();
 	}
 }
