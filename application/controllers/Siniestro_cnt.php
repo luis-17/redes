@@ -212,6 +212,7 @@ class Siniestro_cnt extends CI_Controller {
 		$data['idespecialidad'] = 0;
 
 		$idsiniestro=0;
+		$idespecialidad=0;
 
 		// Validar si tiene atención hoy
 		$siniestro = $this->siniestro_mdl->getSiniestro2($data);
@@ -627,6 +628,12 @@ class Siniestro_cnt extends CI_Controller {
 				}
 			}else{
 				$idsiniestro = 0;
+			}
+
+			if($idvariableplan==1){
+				$idsiniestro=$idsiniestro;
+			}else{
+				$idsiniestro=0;
 			}
 
 			$idsiniestro2=$idsiniestro;
@@ -1139,7 +1146,7 @@ class Siniestro_cnt extends CI_Controller {
 							<td>'.$data['telefono'].'</td>
 						</tr>
 					</table>
-					<p>Se remite la informaci&oacute;n para la post-venta.</p>
+					<p>Se remite la informaci&oacute;n para el seguimiento de la atenci&oacute;n.</p>
 					<p>Saludos Cordiales</p>
 					<p>Atte. Red Salud</p></div>';		
 			
