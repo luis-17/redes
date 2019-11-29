@@ -740,11 +740,6 @@ class Siniestro_cnt extends CI_Controller {
 	          	$this->pdf->SetFont('Arial','',10); 
 	          	$this->pdf->MultiCell(0,6,utf8_decode("FORMULARIO DE ORDEN DE ATENCIÓN"),0,'R',false);
 	          	$this->pdf->Ln(10);	 
-
-	          	$this->pdf->Cell(47,7,utf8_decode("tipo: ".$test),1,0,'L',false); 
-	          	$this->pdf->Ln(10);	    
-
-
 			    $this->pdf->SetFont('Arial','B',10);
 			    $this->pdf->SetFillColor(0,0,0);
 			    $this->pdf->SetTextColor(255,255,255); 
