@@ -552,8 +552,16 @@ class Siniestro_cnt extends CI_Controller {
 			$idvariableplan = $_POST['idvariableplan'];
 			$nombre_var2="";
 
+			$med = $this->siniestro_mdl->getMedicamentosBloqueados($data);
+			if(!empty($med)){
+				$comentario = "No cubierto para la especialidad seleccionada";
+			}else{
+				$comentario = "El plan sólo cubre medicamentos en su presentación genérica";
+			}
+
 			//validar tipo variable
 			$variable = $this->siniestro_mdl->getVariable($idvariableplan);
+			$nombre = $variable['nombre_var'];
 			$tipo_var = $variable['tipo_var'];
 			$data['tipo_var'] = $tipo_var;
 
@@ -652,8 +660,6 @@ class Siniestro_cnt extends CI_Controller {
 								$this->siniestro_mdl->upPeriodo($data);							
 							}
 						}
-
-								$test = 1;	
 					}else{
 						$certificado = $this->siniestro_mdl->getCertificado($data);
 						foreach ($certificado as $c) {
@@ -682,9 +688,6 @@ class Siniestro_cnt extends CI_Controller {
 						}
 						$data['idperiodo'] = $this->db->insert_id();
 						$vez_actual = 0;
-
-
-								$test = 2;	
 					}
 				}
 			 }
@@ -713,6 +716,7 @@ class Siniestro_cnt extends CI_Controller {
 			}
 			$OrdenAtencion = $this->siniestro_mdl->OrdenAtencion($data);
 			foreach ($OrdenAtencion as $oa){
+				$idproducto = $oa->idproducto;
 				$num = $oa->num_orden_atencion;
 				$plan = $oa->nombre_plan;
 				$fecha_atencion = $oa->fecha_atencion;
@@ -734,7 +738,7 @@ class Siniestro_cnt extends CI_Controller {
 			    $this->pdf->Ln();  
 	          	$this->pdf->SetFont('Arial','B',10); 
 
-	          	
+	        if($cobertura==1){
 	          	$this->pdf->MultiCell(0,6,utf8_decode($nombre_comercial_pr),0,'R',false);
 	          	$this->pdf->Ln(-2);
 	          	$this->pdf->SetFont('Arial','',10); 
@@ -811,7 +815,7 @@ class Siniestro_cnt extends CI_Controller {
 	            $this->pdf->Ln();
 	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
 	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode("Tratamiento (Según el primer diagnóstico, cubiertos sólo en presentación genérica)"),0,0,'L',false);	            
+	            $this->pdf->Cell(190,7,utf8_decode("Tratamiento (".$comentario.")"),0,0,'L',false);	            
 	            $this->pdf->SetFont('Arial','',9);
 	            $this->pdf->Ln();
 	            $this->pdf->Cell(64,7,utf8_decode("Medicamento"),1,0,'C',false);
@@ -839,97 +843,215 @@ class Siniestro_cnt extends CI_Controller {
 	            $this->pdf->SetFont('Arial','I',8);
 	            $this->pdf->Cell(190,7,utf8_decode("* Mediante el presente autorizo a Red Salud se le proporcione toda información médica que requiera para la evaluación de expediente médico."),0,0,'L',false);
 			    $this->pdf->SetFillColor(200,200,200);
-			    if($cobertura==1){
-			    $this->pdf->AddPage();				    
-			    $this->pdf->AliasNbPages();	
-			    $this->pdf->Ln(-2);  
-	          	$this->pdf->SetFont('Arial','B',10); 
-	          	$this->pdf->MultiCell(0,6,utf8_decode($nombre_comercial_pr),0,'R',false);
-	          	$this->pdf->Ln();
+				if(empty($med)){
+				    $this->pdf->AddPage();				    
+				    $this->pdf->AliasNbPages();	
+				    $this->pdf->Ln(-2);  
+		          	$this->pdf->SetFont('Arial','B',10); 
+		          	$this->pdf->MultiCell(0,6,utf8_decode($nombre_comercial_pr),0,'R',false);
+		          	$this->pdf->Ln();
+		          	$this->pdf->SetFont('Arial','',10); 
+		          	$this->pdf->MultiCell(0,6,utf8_decode("FORMULARIO DE ORDEN DE MEDICAMENTOS"),0,'R',false);
+		          	$this->pdf->Ln(10);	    	          	
+				    $this->pdf->SetFillColor(0,0,0);
+				    $this->pdf->SetTextColor(255,255,255); 
+		          	$this->pdf->SetFont('Arial','B',10);
+		          	$this->pdf->MultiCell(190,6,utf8_decode("ORDEN DE MEDICAMENTOS"),0,'R',true);
+		          	$this->pdf->Ln();	          	
+				    $this->pdf->SetFont('Arial','',10);
+				    $this->pdf->SetTextColor(0,0,0); 
+		          	$this->pdf->Cell(100,7,"Paciente: ".utf8_decode($data['afiliado']),0,0,'L',false);
+		          	$this->pdf->Cell(50,7,utf8_decode("Orden Atención N°: "),0,0,'R',false);  
+		          	$this->pdf->SetFillColor(0,0,0);
+				    $this->pdf->SetTextColor(255,255,255); 
+				    $this->pdf->Cell(40,7,utf8_decode($num),1,0,'L',true);    	
+				    $this->pdf->SetTextColor(0,0,0); 
+				    $this->pdf->Ln();
+				    $this->pdf->Cell(190,7,"DNI: ".utf8_decode($data['dni']),0,0,'L',false);
+				    $this->pdf->Ln();
+				    $this->pdf->Cell(190,7,utf8_decode("Fecha Atención: ".$fecha_atencion),0,0,'L',false);
+				    $this->pdf->Ln();
+				    $this->pdf->Cell(190,7,utf8_decode("Lugar Atención: ".$nombre_comercial_pr),0,0,'L',false);
+				    $this->pdf->Ln();
+				    $this->pdf->SetTextColor(255,255,255); 
+		          	$this->pdf->SetFont('Arial','B',10); 
+		          	$this->pdf->MultiCell(190,6,utf8_decode("CONDICIONES DEL PLAN: ".$plan),0,'L',true);
+				    $this->pdf->SetFont('Arial','',10);
+				    $this->pdf->SetTextColor(0,0,0); 
+				    $this->pdf->MultiCell(190,6,utf8_decode($nombre_var.': '.$texto_web),1,'J');			    
+		            $this->pdf->SetFont('Arial','B',9);
+		            $this->pdf->Cell(190,7,utf8_decode("Diagnóstico"),0,0,'L',false);
+		            $this->pdf->Ln();
+		            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
+		            $this->pdf->Ln();
+				    $this->pdf->SetFont('Arial','B',10); 
+				    $this->pdf->Cell(190,7,utf8_decode("Tratamiento: "),0,0,'L',false);
+				    $this->pdf->Ln();
+				    $this->pdf->Cell(190,7,utf8_decode("Cubiertos (el plan sólo cubre medicamentos en su presentación genérica)"),0,0,'L',false);	            
+		            $this->pdf->SetFont('Arial','',9);
+		            $this->pdf->Ln();
+		            $this->pdf->Cell(64,7,utf8_decode("Medicamento"),1,0,'C',false);
+		            $this->pdf->Cell(63,7,utf8_decode("Cantidad"),1,0,'C',false);
+		            $this->pdf->Cell(64,7,utf8_decode("Dosis"),1,0,'C',false);
+		            $this->pdf->Ln();
+		            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+		            $this->pdf->Cell(63,7,utf8_decode(""),1,0,'L',false);
+		            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+		            $this->pdf->Ln();
+		            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+		            $this->pdf->Cell(63,7,utf8_decode(""),1,0,'L',false);
+		            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+		            $this->pdf->Ln();
+		            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+		            $this->pdf->Cell(63,7,utf8_decode(""),1,0,'L',false);
+		            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+		            $this->pdf->Ln();
+		            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+		            $this->pdf->Cell(63,7,utf8_decode(""),1,0,'L',false);
+		            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+		            $this->pdf->Ln();
+		            $this->pdf->SetFont('Arial','B',10); 
+				    $this->pdf->Cell(190,7,utf8_decode("No Cubiertos"),0,0,'L',false);	            
+		            $this->pdf->SetFont('Arial','',9);
+		            $this->pdf->Ln();
+		            $this->pdf->Cell(64,7,utf8_decode("Medicamento"),1,0,'C',false);
+		            $this->pdf->Cell(63,7,utf8_decode("Cantidad"),1,0,'C',false);
+		            $this->pdf->Cell(64,7,utf8_decode("Dosis"),1,0,'C',false);
+		            $this->pdf->Ln();
+		            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+		            $this->pdf->Cell(63,7,utf8_decode(""),1,0,'L',false);
+		            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+		            $this->pdf->Ln();
+		            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+		            $this->pdf->Cell(63,7,utf8_decode(""),1,0,'L',false);
+		            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+		            $this->pdf->Ln();
+		            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+		            $this->pdf->Cell(63,7,utf8_decode(""),1,0,'L',false);
+		            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+		            $this->pdf->Ln();
+		            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+		            $this->pdf->Cell(63,7,utf8_decode(""),1,0,'L',false);
+		            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+		            $this->pdf->Ln(25);
+		            $this->pdf->Cell(95,7,utf8_decode("________________________"),0,0,'C',false);
+		            $this->pdf->Cell(95,7,utf8_decode("________________________"),0,0,'C',false);
+		            $this->pdf->Ln();
+		            $this->pdf->Cell(95,7,utf8_decode("Médico Tratante"),0,0,'C',false);
+		            $this->pdf->Cell(95,7,utf8_decode("Titular y/o Paciente"),0,0,'C',false);
+		            $this->pdf->Ln(10);
+		            $this->pdf->SetFont('Arial','I',8);
+		            $this->pdf->Cell(190,7,utf8_decode("* El plan no cubre vitaminas ni ansiolíticos."),0,0,'L',false);
+		            $this->pdf->Ln();
+		            $this->pdf->Cell(190,7,utf8_decode("* La presente orden de medicamentos tiene validez por 7 días."),0,0,'L',false);
+		            $this->pdf->SetTextColor(243,45,45); 
+		            $this->pdf->Ln();
+		            $this->pdf->SetFont('Arial','B',9);
+		            $this->pdf->MultiCell(190,6,utf8_decode("Es obligatorio el registro de los eventos de laboratorio por parte del Centro Médico."),0,'J');
+		            $this->pdf->MultiCell(190,6,utf8_decode("Si tuviera algun problema o consulta, puede comunicarse con Red-Salud."),0,'J');
+		            $this->pdf->MultiCell(190,6,utf8_decode("Central Telefónica: (01) 445-3019. RPM: #999908022. Email: contacto@red-salud.com"),0,'J');
+		            $this->pdf->SetTextColor(0,0,0);
+	        	}
+	        }else{
+	        	$this->pdf->MultiCell(0,6,utf8_decode($nombre_comercial_pr),0,'R',false);
+	          	$this->pdf->Ln(-2);
 	          	$this->pdf->SetFont('Arial','',10); 
-	          	$this->pdf->MultiCell(0,6,utf8_decode("FORMULARIO DE ORDEN DE MEDICAMENTOS"),0,'R',false);
-	          	$this->pdf->Ln(10);	    	          	
+	          	$this->pdf->MultiCell(0,6,utf8_decode("FORMULARIO DE ORDEN DE ATENCIÓN"),0,'R',false);
+	          	$this->pdf->Ln(10);	 
+			    $this->pdf->SetFont('Arial','B',10);
 			    $this->pdf->SetFillColor(0,0,0);
 			    $this->pdf->SetTextColor(255,255,255); 
-	          	$this->pdf->SetFont('Arial','B',10);
-	          	$this->pdf->MultiCell(190,6,utf8_decode("ORDEN DE MEDICAMENTOS"),0,'R',true);
-	          	$this->pdf->Ln();	          	
-			    $this->pdf->SetFont('Arial','',10);
-			    $this->pdf->SetTextColor(0,0,0); 
-	          	$this->pdf->Cell(100,7,"Paciente: ".utf8_decode($data['afiliado']),0,0,'L',false);
-	          	$this->pdf->Cell(50,7,utf8_decode("Orden Atención N°: "),0,0,'R',false);  
-	          	$this->pdf->SetFillColor(0,0,0);
+			    $this->pdf->Cell(190,7,utf8_decode("ORDEN DE ATENCIÓN N°".$num),1,0,'L',true);
+			    $this->pdf->Ln();
+			    $this->pdf->SetFont('Arial','',9);
+	    		$this->pdf->SetTextColor(0,0,0); 	    		
+			    $this->pdf->Cell(47,7,"DNI: ".$data['dni'],1,0,'L',false);
+			    $this->pdf->Cell(104,7,"Paciente: ".utf8_decode($data['afiliado']),1,0,'L',false);
+			    $this->pdf->Cell(39,7,"Fech. Nac: ".$fech_nac,1,0,'L',false);
+			    $this->pdf->Ln();
+			    $this->pdf->Cell(47,7,utf8_decode("Fecha de Atención: ".$fecha_atencion),1,0,'L',false);
+			    $this->pdf->Cell(143,7,utf8_decode("Lugar de Atención: ".$nombre_comercial_pr),1,0,'L',false);
+			    $this->pdf->Ln();
+			    $this->pdf->Cell(190,7,utf8_decode("Servicio: ".$especialidad),1,0,'L',false);
+			    $this->pdf->SetFont('Arial','B',10);
+			    $this->pdf->Ln(); 
+			    $this->pdf->SetFillColor(0,0,0);
 			    $this->pdf->SetTextColor(255,255,255); 
-			    $this->pdf->Cell(40,7,utf8_decode($num),1,0,'L',true);    	
-			    $this->pdf->SetTextColor(0,0,0); 
+			    $this->pdf->Cell(190,7,utf8_decode("CONDICIONES DEL PLAN: ".$plan),1,0,'L',true);
 			    $this->pdf->Ln();
-			    $this->pdf->Cell(190,7,"DNI: ".utf8_decode($data['dni']),0,0,'L',false);
-			    $this->pdf->Ln();
-			    $this->pdf->Cell(190,7,utf8_decode("Fecha Atención: ".$fecha_atencion),0,0,'L',false);
-			    $this->pdf->Ln();
-			    $this->pdf->Cell(190,7,utf8_decode("Lugar Atención: ".$nombre_comercial_pr),0,0,'L',false);
-			    $this->pdf->Ln();
-			    $this->pdf->SetTextColor(255,255,255); 
-	          	$this->pdf->SetFont('Arial','B',10); 
-	          	$this->pdf->MultiCell(190,6,utf8_decode("CONDICIONES DEL PLAN: ".$plan),0,'L',true);
-			    $this->pdf->SetFont('Arial','',10);
-			    $this->pdf->SetTextColor(0,0,0); 
-			    $this->pdf->MultiCell(190,6,utf8_decode($nombre_var.': '.$texto_web),1,'J');			    
+			    $this->pdf->SetFillColor(213,210,210);
+			    $this->pdf->SetTextColor(0,0,0);
+			    $this->pdf->SetFont('Arial','',8);
+			    $coberturas = $this->siniestro_mdl->coberturas($data);
+			    foreach ($coberturas as $c) {
+			    	if($idvariableplan==$c->idvariableplan){
+			    		$nombre_variable = $c->nombre_var;
+			    		$texto_web = $c->texto_web;
+			    	}    	
+			    }      	
 	            $this->pdf->SetFont('Arial','B',9);
-	            $this->pdf->Cell(190,7,utf8_decode("Diagnóstico"),0,0,'L',false);
+	           	$this->pdf->Cell(190,7,utf8_decode("Motivo de la atención"),0,0,'L',false);	           	
 	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);	
+	            $this->pdf->Ln(12);
+	            $this->pdf->Cell(80,7,utf8_decode("Servicio (Ejem: Laboratorio, Imágenes, etc)"),1,0,'C',false);
+	            $this->pdf->Cell(110,7,utf8_decode("Descripción (Ejem: Hemograma Completo, Urocultivo, etc)"),1,0,'C',false);
 	            $this->pdf->Ln();
-			    $this->pdf->SetFont('Arial','B',10); 
-			    $this->pdf->Cell(190,7,utf8_decode("Tratamiento: "),0,0,'L',false);
-			    $this->pdf->Ln();
-			    $this->pdf->Cell(190,7,utf8_decode("Cubiertos (el plan sólo cubre medicamentos en su presentación genérica)"),0,0,'L',false);	            
-	            $this->pdf->SetFont('Arial','',9);
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
 	            $this->pdf->Ln();
-	            $this->pdf->Cell(64,7,utf8_decode("Medicamento"),1,0,'C',false);
-	            $this->pdf->Cell(63,7,utf8_decode("Cantidad"),1,0,'C',false);
-	            $this->pdf->Cell(64,7,utf8_decode("Dosis"),1,0,'C',false);
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
 	            $this->pdf->Ln();
-	            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Cell(63,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
 	            $this->pdf->Ln();
-	            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Cell(63,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
 	            $this->pdf->Ln();
-	            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Cell(63,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
 	            $this->pdf->Ln();
-	            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Cell(63,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
 	            $this->pdf->Ln();
-	            $this->pdf->SetFont('Arial','B',10); 
-			    $this->pdf->Cell(190,7,utf8_decode("No Cubiertos"),0,0,'L',false);	            
-	            $this->pdf->SetFont('Arial','',9);
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
 	            $this->pdf->Ln();
-	            $this->pdf->Cell(64,7,utf8_decode("Medicamento"),1,0,'C',false);
-	            $this->pdf->Cell(63,7,utf8_decode("Cantidad"),1,0,'C',false);
-	            $this->pdf->Cell(64,7,utf8_decode("Dosis"),1,0,'C',false);
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
 	            $this->pdf->Ln();
-	            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Cell(63,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
 	            $this->pdf->Ln();
-	            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Cell(63,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
 	            $this->pdf->Ln();
-	            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Cell(63,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
 	            $this->pdf->Ln();
-	            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Cell(63,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Cell(64,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Ln(25);
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Cell(80,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Cell(110,7,utf8_decode(""),1,0,'L',false);
+	            $this->pdf->Ln();
+	            $this->pdf->Ln(15);
 	            $this->pdf->Cell(95,7,utf8_decode("________________________"),0,0,'C',false);
 	            $this->pdf->Cell(95,7,utf8_decode("________________________"),0,0,'C',false);
 	            $this->pdf->Ln();
@@ -937,89 +1059,9 @@ class Siniestro_cnt extends CI_Controller {
 	            $this->pdf->Cell(95,7,utf8_decode("Titular y/o Paciente"),0,0,'C',false);
 	            $this->pdf->Ln(10);
 	            $this->pdf->SetFont('Arial','I',8);
-	            $this->pdf->Cell(190,7,utf8_decode("* El plan no cubre vitaminas ni ansiolíticos."),0,0,'L',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode("* La presente orden de medicamentos tiene validez por 7 días."),0,0,'L',false);
-	            $this->pdf->SetTextColor(243,45,45); 
-	            $this->pdf->Ln();
-	            $this->pdf->SetFont('Arial','B',9);
-	            $this->pdf->MultiCell(190,6,utf8_decode("Es obligatorio el registro de los eventos de laboratorio por parte del Centro Médico."),0,'J');
-	            $this->pdf->MultiCell(190,6,utf8_decode("Si tuviera algun problema o consulta, puede comunicarse con Red-Salud."),0,'J');
-	            $this->pdf->MultiCell(190,6,utf8_decode("Central Telefónica: (01) 445-3019. RPM: #999908022. Email: contacto@red-salud.com"),0,'J');
-	            $this->pdf->SetTextColor(0,0,0);
-	        	}else{
-	        	$this->pdf->AddPage();				    
-			    $this->pdf->AliasNbPages();	
-			    $this->pdf->Ln(-2);  
-	          	$this->pdf->SetFont('Arial','B',10); 
-	          	$this->pdf->MultiCell(0,6,utf8_decode($nombre_comercial_pr),0,'R',false);
-	          	$this->pdf->SetFont('Arial','',10); 
-	          	$this->pdf->MultiCell(0,6,utf8_decode("FORMULARIO DE ORDEN DE ATENCIÓN"),0,'R',false);
-	          	$this->pdf->Ln(10);	    	          	
-			    $this->pdf->SetFillColor(0,0,0);
-			    $this->pdf->SetTextColor(255,255,255); 
-	          	$this->pdf->SetFont('Arial','B',10);
-	          	$this->pdf->MultiCell(190,6,utf8_decode("EMERGENCIAS / URGENCIAS"),0,'R',true);
-	          	$this->pdf->Ln();	          	
-			    $this->pdf->SetFont('Arial','',10);
-			    $this->pdf->SetTextColor(0,0,0); 
-	          	$this->pdf->Cell(100,7,"Paciente: ".utf8_decode($data['afiliado']),0,0,'L',false);
-	          	$this->pdf->Cell(50,7,utf8_decode("Orden Atención N°: "),0,0,'R',false);  
-	          	$this->pdf->SetFillColor(0,0,0);
-			    $this->pdf->SetTextColor(255,255,255); 
-			    $this->pdf->Cell(40,7,utf8_decode($num),1,0,'L',true);    	
-			    $this->pdf->SetTextColor(0,0,0); 
-			    $this->pdf->Ln();
-			    $this->pdf->Cell(190,7,"DNI: ".utf8_decode($data['dni']),0,0,'L',false);
-			    $this->pdf->Ln();
-			    $this->pdf->Cell(190,7,utf8_decode("Fecha Atención: ".$fecha_atencion),0,0,'L',false);
-			    $this->pdf->Ln();
-			    $this->pdf->Cell(190,7,utf8_decode("Lugar Atención: ".$nombre_comercial_pr),0,0,'L',false);
-			    $this->pdf->Ln();
-			    $this->pdf->SetTextColor(255,255,255); 
-	          	$this->pdf->SetFont('Arial','B',10); 
-	          	$this->pdf->MultiCell(190,6,utf8_decode("CONDICIONES DEL PLAN: ".$plan),0,'L',true);
-			    $this->pdf->SetFont('Arial','',10);
-			    $this->pdf->SetTextColor(0,0,0); 
-			    $this->pdf->MultiCell(190,6,utf8_decode($nombre_var2.': '.$texto_web2),1,'J');
-			    $this->pdf->SetFont('Arial','B',10); 
-			    $this->pdf->Cell(190,7,utf8_decode("Laboratorios: "),0,0,'L',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode("Imageneología: "),0,0,'L',false);
-			    $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode("Otros: "),0,0,'L',false);
-			    $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Cell(190,7,utf8_decode(""),1,0,'L',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Ln(35);
-	            $this->pdf->Cell(95,7,utf8_decode("________________________"),0,0,'C',false);
-	            $this->pdf->Cell(95,7,utf8_decode("________________________"),0,0,'C',false);
-	            $this->pdf->Ln();
-	            $this->pdf->Cell(95,7,utf8_decode("Médico Tratante"),0,0,'C',false);
-	            $this->pdf->Cell(95,7,utf8_decode("Titular y/o Paciente"),0,0,'C',false);
-	            $this->pdf->Ln(10);	            
-	            $this->pdf->SetTextColor(243,45,45); 
-	            $this->pdf->SetFont('Arial','B',9);
-	            $this->pdf->MultiCell(190,6,utf8_decode("Si tuviera algun problema o consulta, puede comunicarse con Red-Salud."),0,'J');
-	            $this->pdf->MultiCell(190,6,utf8_decode("Central Telefónica: (01) 445-3019. RPM: #999908022. Email: contacto@red-salud.com"),0,'J');
-	            $this->pdf->SetTextColor(0,0,0);
-	        	}
+	            $this->pdf->Cell(190,7,utf8_decode("* Mediante el presente autorizo a Red Salud se le proporcione toda información de la atención que requiera para la evaluación de expediente médico."),0,0,'L',false);
+			    $this->pdf->SetFillColor(200,200,200);
+	        }
 
 			$this->pdf->Output("uploads/".$data['idsiniestro'].".pdf", 'F');
 			//email para post venta
