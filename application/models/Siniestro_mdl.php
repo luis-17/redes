@@ -645,7 +645,7 @@
 	}
 
 	function getIdPlanDetalle($cert_id,$idespecialidad){
-		$query = $this->db->query("select idplandetalle, (select nombre_esp from especialidad where idespecialidad=$idespecialidad) as nombre_esp from plan_detalle where idplan in (select plan_id from certificado where cert_id=$cert_id) and idvariableplan=1 and idplandetalle in (select idplandetalle from producto_detalle where idproducto=(select idproducto from producto where idespecialidad=$idespecialidad))");
+		$query = $this->db->query("select idplandetalle, (select nombre_esp from especialidad where idespecialidad=21) as nombre_esp from plan_detalle where idplan in (select plan_id from certificado where cert_id=$cert_id) and idvariableplan=1 and idplandetalle in (select idplandetalle from producto_detalle where idproducto=(select idproducto from producto where idespecialidad=$idespecialidad))");
 		return $query->row_array();
 	}
 }
