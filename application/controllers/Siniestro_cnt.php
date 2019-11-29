@@ -639,6 +639,7 @@ class Siniestro_cnt extends CI_Controller {
 							$fin = strtotime($pe->finVig);
 					        $fin = date("Y-m-d", $fin);
 					        $hoy = time();
+					        $ini = strtotime($fin."+ 1 day");
 							if($estado==1){
 								while(strtotime($fin)<$hoy){
 									$ini = strtotime($fin."+ 1 day");
