@@ -159,8 +159,8 @@ extract($user);
         <div class="col-12">
           <div class="seccion-title">
             <br><br><br><br>
-            <h2>El DNI ingresado, no cuenta con planes disponibles</h2>
-            <h3>Referenciar al afiliado a nuestra central telefónica: (01)445-3019 anexo 100.</h3>
+            <h2>El DNI ingresado, no se encuentra disponible</h2>
+            <h3>Se solicita referenciar al afiliado a nuestra central telefónica: (01)445-3019 anexo 100.</h3>
             <p><a href="<?=base_url()?>index.php" class="btn btn-custom btn-celeste">Retornar</a></p>
           </div>
         </div>
