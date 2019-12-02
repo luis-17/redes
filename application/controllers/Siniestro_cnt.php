@@ -544,6 +544,7 @@ class Siniestro_cnt extends CI_Controller {
 			$data['aseg_id'] = $_POST['aseg_id'];
 			$data['certase_id'] = $_POST['certase_id'];
 			$data['aseg_telf'] = $_POST['telf'];
+			$telefono = $_POST['telf'];
 			$data['hoy'] = date("Y-m-d");
 			$data['idproveedor'] = $idproveedor;
 			$data['especialidad'] = $_POST['especialidad'];
@@ -702,7 +703,9 @@ class Siniestro_cnt extends CI_Controller {
 			 			$data['vez_actual'] = $ve->vez_evento;
 			 		}
 				}
-			$this->siniestro_mdl->upVez_evento($data);						
+			$this->siniestro_mdl->upVez_evento($data);
+
+
 			$this->siniestro_mdl->inSiniestroDetalle($data); 
 
 			$afiliado = $this->siniestro_mdl->getAfiliadoId($data['certase_id']);
@@ -727,6 +730,47 @@ class Siniestro_cnt extends CI_Controller {
 
 			$fecha_atencion = date('d/m/Y',strtotime($fecha_atencion));
 			$fecha = date("d/m/Y");
+
+					//sale sms
+					if (!empty($telefono) && $num_eventos>0) {
+						$datos = array(
+						    'from' => 'Red Salud',
+						    'to' => '+51'.$telefono,
+						    'text' => 'Pruebas sms'
+						);
+
+						$parametros = json_encode($datos);
+						
+						$ch = curl_init('https://api.infobip.com/sms/1/text/single');
+						curl_setopt ($ch, CURLOPT_POST, 1);
+						curl_setopt ($ch, CURLOPT_CUSTOMREQUEST, "POST");
+						curl_setopt ($ch, CURLOPT_POSTFIELDS, $parametros);
+						curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json',
+						        'Authorization: Basic '. base64_encode("redsalud:Redsalud2019"),
+						        'Accept: application/json'
+						        //'Content-Length: ' . strlen($parametros) // Abajo podríamos agregar más encabezados
+						    )
+						);
+						curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+						# Hora de hacer la petición
+						$resultado = curl_exec($ch);
+						//print_r($resultado.' - ');
+						# Vemos si el código es 200, es decir, HTTP_OK
+						$codigoRespuesta = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+						//print_r($codigoRespuesta);
+						if($codigoRespuesta === 200){
+						    # Decodificar JSON porque esa es la respuesta
+						    $respuestaDecodificada = json_decode($resultado);
+						    # Simplemente los imprimimos
+						    //print_r($respuestaDecodificada);
+						    //echo "<strong>Respuesta: </strong>" . $respuestaDecodificada;
+						}else{
+						    # Error
+						    echo "Error consultando. Código de respuesta: $codigoRespuesta";
+						}
+						curl_close($ch);
+					}
 
 			// //Crear formato de liquidación
 			$this->load->library('Pdf');
